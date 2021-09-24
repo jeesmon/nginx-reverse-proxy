@@ -1,0 +1,41 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: reverse-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reverse-proxy
+  template:
+    metadata:
+      labels:
+        app: reverse-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: jjacob/nginx-reverse-proxy:0.0.1
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: UPSTREAM_SERVICE_PROTOCOL
+              value: https
+            - name: UPSTREAM_SERVICE_NAME
+              value: example.svc.cluster.local
+            - name: UPSTREAM_SERVICE_PORT
+              value: '443'
+          imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reverse-proxy
+  namespace: ps-launch
+spec:
+  selector:
+    app: reverse-proxy
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
